@@ -14,16 +14,36 @@ HalfEdgeMesh::~HalfEdgeMesh() {}
  */
 bool HalfEdgeMesh::AddFace(const std::vector<glm::vec3>& verts) {
     // Add your code here
-    std::cerr << "ADD TRIANGLE NOT IMPLEMENTED. ";
 
     // Add the vertices of the face/triangle
+    std::cerr << "ADD TRIANGLE NOT IMPLEMENTED. ";
+    const size_t ind0 = AddVertex(verts.at(0));
+    const size_t ind1 = AddVertex(verts.at(1));
+    const size_t ind2 = AddVertex(verts.at(2));
 
     // Add all half-edge pairs
+    std::pair indices = AddHalfEdgePair(ind0, ind1);
+    std::pair indices1 = AddHalfEdgePair(ind1, ind2);
+    std::pair indices2 = AddHalfEdgePair(ind2, ind0);
 
     // Connect inner ring
+    e(indices.first).next = indices1.first;
+    mEdges[indices.first].prev = indices2.first;
+
+    mEdges[indices1.first].next = indices2.first;
+    mEdges[indices1.first].prev = indices.first;
+
+    mEdges[indices2.first].next = indices.first;
+    mEdges[indices2.first].prev = indices1.first;
+
 
     // Finally, create the face, don't forget to set the normal (which should be
     // normalized)
+    Face face;
+    face.edge = indices.first;
+    mFaces.push_back(face);
+    mFaces.back().normal = FaceNormal(mFaces.size() - 1); 
+
 
     // All half-edges share the same left face (previously added)
 
@@ -37,7 +57,8 @@ bool HalfEdgeMesh::AddFace(const std::vector<glm::vec3>& verts) {
  * \return the index to the vertex
  */
 size_t HalfEdgeMesh::AddVertex(const glm::vec3& v) {
-    std::map<glm::vec3, size_t>::iterator it = mUniqueVerts.find(v);
+
+    std::map<glm::vec3, size_t>::iterator it = mUniqueVerts.find(v); //look for existing vertex
     if (it != mUniqueVerts.end()) {
         return (*it).second;  // get the index of the already existing vertex
     }
@@ -218,6 +239,33 @@ std::vector<size_t> HalfEdgeMesh::FindNeighborFaces(size_t vertexIndex) const {
     std::vector<size_t> foundFaces;
 
     // Add your code here
+    Vertex ve = v(vertexIndex);
+    HalfEdge he = e(ve.edge);
+    HalfEdge temp = e(he.pair);
+   
+    //Add first face
+    Face fe = f(he.face);
+    foundFaces.push_back(he.face);
+   
+    //Go through the first pair. Go until the edge on the pair
+    while (temp.pair != ve.edge) {
+        foundFaces.push_back(temp.face);
+        temp = e(temp.next);
+        temp = e(temp.pair);
+    }
+
+
+    /*
+    // Find other triangles that include this vertex
+    for (size_t i = 0; i < mFaces.size(); ++i) {
+        const Face& face = mFaces[i];
+        if (face.v1 == vertexIndex || face.v2 == vertexIndex || face.v3 == vertexIndex) {
+            foundFaces.push_back(i);
+        }
+    }
+    */
+
+
     return foundFaces;
 }
 
