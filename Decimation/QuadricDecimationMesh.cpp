@@ -56,6 +56,12 @@ glm::mat4 QuadricDecimationMesh::createQuadricForVert(size_t indx) const {
 
     // The quadric for a vertex is the sum of all the quadrics for the adjacent
     // faces Tip: Matrix4x4 has an operator +=
+
+    for (const auto& faceIndx : FindNeighborFaces(indx)) {
+        Q += createQuadricForFace(faceIndx);
+    }
+
+
     return Q;
 }
 
@@ -66,7 +72,23 @@ glm::mat4 QuadricDecimationMesh::createQuadricForFace(size_t indx) const {
 
     // Calculate the quadric (outer product of plane parameters) for a face
     // here using the formula from Garland and Heckbert
-    return glm::mat4();
+
+    HalfEdge e1 = e(f(indx).edge);
+
+    // Vertex positions of the face
+    glm::vec3 v1 = v(e1.vert).pos;
+    glm::vec3 v2 = v(e(e1.next).vert).pos;
+    glm::vec3 v3 = v(e(e1.prev).vert).pos;
+
+    // Compute normal and plane equation coefficients
+    glm::vec3 normal = glm::normalize(glm::cross(v2 - v1, v3 - v1));
+    float d = -glm::dot(normal, v1); // ax + by + cz + d. This is the last component d.
+
+    glm::vec4 plane(normal, d);                           // Extended plane coefficients to 4D. 
+    glm::mat4 quadric = glm::outerProduct(plane, plane);  // Compute quadric. When did we do yttre produkt?
+
+    return quadric;
+    //return glm::mat4();
 }
 
 void QuadricDecimationMesh::Render() {
