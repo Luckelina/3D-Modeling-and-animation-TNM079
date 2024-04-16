@@ -40,7 +40,7 @@ void QuadricDecimationMesh::computeCollapse(EdgeCollapse* collapse) {
 
     HalfEdge e1 = e(collapse->halfEdge);
     auto v1 = e1.vert;
-    auto v2 = e(e1.prev).vert;
+    auto v2 = e(e1.next).vert;
 
     // Q is the sum of the quadrics at the edge endpoints
     glm::mat4 Q = mQuadrics[v1] + mQuadrics[v2];
@@ -56,8 +56,8 @@ void QuadricDecimationMesh::computeCollapse(EdgeCollapse* collapse) {
     //Check if invertable det(Q) != 0
     if (abs(glm::determinant(Q)) > 0.0000000001f) {
     
-
-        v_bar = glm::inverse(Q) * glm::vec4(0, 0, 0, 1);
+    
+        v_bar = glm::inverse(Q) * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     
     
     
@@ -67,11 +67,11 @@ void QuadricDecimationMesh::computeCollapse(EdgeCollapse* collapse) {
         
         glm::vec3 v1Pos = v(v1).pos;
         glm::vec3 v2Pos = v(v2).pos;
-        glm::vec3 midPos = (v1Pos + v2Pos) * 0.5f;
+        glm::vec3 midPos = ((v1Pos + v2Pos) * 0.5f);
        
         
-        
-        glm::vec3 candidates[3] = {v1Pos, v2Pos, midPos};
+        std::vector<glm::vec3> candidates{v1Pos, v2Pos, midPos};
+       // glm::vec3 candidates[3] = {v1Pos, v2Pos, midPos};
         float minError = std::numeric_limits<float>::max();
         for (const auto& candidate : candidates) {
             glm::vec4 v_candidate = glm::vec4(candidate, 1.0f);
@@ -84,7 +84,8 @@ void QuadricDecimationMesh::computeCollapse(EdgeCollapse* collapse) {
     }
 
     collapse->position = {v_bar.x,v_bar.y,v_bar.z};  // Set the target position for this collapse
-    collapse->cost = glm::dot(v_bar, Q * v_bar);
+    float c = glm::dot(v_bar, Q * v_bar);
+    collapse->cost = c;
 
    // std::cerr << "computeCollapse in QuadricDecimationMesh not implemented.\n";
 }
@@ -132,9 +133,9 @@ glm::mat4 QuadricDecimationMesh::createQuadricForFace(size_t indx) const {
     glm::vec3 normal2 = glm::normalize(glm::cross(v2 - v1, v3 - v1));
 
     glm::vec3 normal1 = f(indx).normal;
-    float d = -glm::dot(normal2, v1); // ax + by + cz + d. This is the last component d.
+    float d = -glm::dot(normal1, v1); // ax + by + cz + d. This is the last component d.
 
-    glm::vec4 plane(normal2, d);                           // Extended plane coefficients to 4D. 
+    glm::vec4 plane(normal1, d);                           // Extended plane coefficients to 4D. 
     glm::mat4 quadric = glm::outerProduct(plane, plane);  // Compute quadric.
     //std::cout << "normal1:\n" << normal1.x << ", " << normal1.y << ", " << normal1.z << "\nnormal 2:\n" << normal2.x << ", " << normal2.y << ", " << normal2.z << std::endl;
 
