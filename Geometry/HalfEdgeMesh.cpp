@@ -16,7 +16,6 @@ bool HalfEdgeMesh::AddFace(const std::vector<glm::vec3>& verts) {
     // Add your code here
 
     // Add the vertices of the face/triangle
-    std::cerr << "ADD TRIANGLE NOT IMPLEMENTED. ";
     const size_t ind0 = AddVertex(verts.at(0));
     const size_t ind1 = AddVertex(verts.at(1));
     const size_t ind2 = AddVertex(verts.at(2));
@@ -42,6 +41,16 @@ bool HalfEdgeMesh::AddFace(const std::vector<glm::vec3>& verts) {
     Face face;
     face.edge = indices.first;
 
+
+    //const auto& p1 = v(ind0).pos;
+    //const auto& p2 = v(ind1).pos;
+    //const auto& p3 = v(ind2).pos;
+    //
+    //const auto e1 = p2 - p1;
+    //const auto e2 = p3 - p1;
+    //face.normal = glm::normalize(glm::cross(e1, e2));
+    //
+    //mFaces.push_back(face);
     mFaces.push_back(face);
     mFaces.back().normal = FaceNormal(mFaces.size() - 1); 
 
