@@ -12,10 +12,30 @@ UniformCubicSplineSubdivisionCurve::UniformCubicSplineSubdivisionCurve(
 void UniformCubicSplineSubdivisionCurve::Subdivide() {
     // Allocate space for new coefficients
     std::vector<glm::vec3> newc;
-
     assert(mCoefficients.size() > 4 && "Need at least 5 points to subdivide");
 
     // Implement the subdivision scheme for a natural cubic spline here
+    newc.reserve(mCoefficients.size() * 2 - 1);  // Prepare space for new coefficients
+
+    
+    newc.push_back(mCoefficients[0]); //Add first boundary
+
+    float coeff = (1.0f / 8.0f);
+    for (int i = 1; i < mCoefficients.size() - 1; i++) { //Add everything inbetween
+
+        glm::vec3 c_prev = mCoefficients[i - 1];
+        glm::vec3 ci = mCoefficients[i];
+        glm::vec3 c_next = mCoefficients[i + 1];
+
+        glm::vec3 ci_new = coeff * (c_prev + 6.0f * ci + c_next);
+        glm::vec3 ci_next_new = coeff * (4.0f * ci + 4.0f * c_next);
+
+        newc.push_back(ci_new);
+        newc.push_back(ci_next_new);
+        
+    }
+    newc.push_back(mCoefficients[mCoefficients.size()-1]); //Add last boundary
+
 
     // If 'mCoefficients' had size N, how large should 'newc' be? Perform a check
     // here!
