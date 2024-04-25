@@ -17,11 +17,18 @@ void UniformCubicSplineSubdivisionCurve::Subdivide() {
     // Implement the subdivision scheme for a natural cubic spline here
     newc.reserve(mCoefficients.size() * 2 - 1);  // Prepare space for new coefficients
 
-    
-    newc.push_back(mCoefficients[0]); //Add first boundary
+
+
 
     float coeff = (1.0f / 8.0f);
-    for (int i = 1; i < mCoefficients.size() - 1; i++) { //Add everything inbetween
+    
+    glm::vec3 ci = mCoefficients[0]; 
+    glm::vec3 c_next = mCoefficients[1];
+    newc.push_back(ci); //Add first boundary
+    newc.push_back(coeff * (4.0f * ci + 4.0f * c_next)); //Add first subdivision
+
+    
+    for (int i = 1; i < mCoefficients.size()-1; i++) { //Add everything inbetween
 
         glm::vec3 c_prev = mCoefficients[i - 1];
         glm::vec3 ci = mCoefficients[i];
@@ -39,7 +46,8 @@ void UniformCubicSplineSubdivisionCurve::Subdivide() {
 
     // If 'mCoefficients' had size N, how large should 'newc' be? Perform a check
     // here!
-    assert(true && "Incorrect number of new coefficients!");
+    bool largeCheck = (newc.size() == 2 * mCoefficients.size() - 1);
+    assert(largeCheck && "Incorrect number of new coefficients!");
 
     mCoefficients = newc;
 }
