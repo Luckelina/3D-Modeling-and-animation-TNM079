@@ -33,7 +33,8 @@ public:
 
     virtual float ComputeTimestep() {
         // Compute and return a stable timestep
-        return 1.f;
+        float gridSpacing = mLS->GetDx(); //Uniform grid spacing! Dx=Dy=Dz
+        return std::min(gridSpacing / std::abs(mF), 1.0f); //1.0f limits timestep to 1.
     }
 
     virtual void Propagate(float time) {
@@ -56,6 +57,19 @@ public:
 
     virtual float Evaluate(size_t i, size_t j, size_t k) {
         // Compute the rate of change (dphi/dt)
-        return 0.f;
+        float ddx2, ddy2, ddz2;  // Squares of the partial derivatives in each direction
+        float signF;
+        //if (mF > 0) {  // Determine the sign of the speed function
+        //    signF = 1.0f;
+        //}else {
+        //    signF = -1.0f;  
+        //}
+
+        // Call Godunov method to calculate the correct gradient squares
+        Godunov(i, j, k, mF, ddx2, ddy2, ddz2);
+
+        // Calculate the norm of the gradient
+        float gradNorm = -1*mF*std::sqrt(ddx2 + ddy2 + ddz2);
+        return gradNorm;
     }
 };
