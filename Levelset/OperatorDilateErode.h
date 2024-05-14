@@ -59,11 +59,6 @@ public:
         // Compute the rate of change (dphi/dt)
         float ddx2, ddy2, ddz2;  // Squares of the partial derivatives in each direction
         float signF;
-        //if (mF > 0) {  // Determine the sign of the speed function
-        //    signF = 1.0f;
-        //}else {
-        //    signF = -1.0f;  
-        //}
 
         // Call Godunov method to calculate the correct gradient squares
         Godunov(i, j, k, mF, ddx2, ddy2, ddz2);
