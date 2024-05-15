@@ -678,13 +678,13 @@ void FrameMain::AddObjectQuadricPlane(wxCommandEvent& event) {
     glm::mat4 M{0.0f};
     // Construct the quadric matrix here
 
-    M[3][0] = 0.5f; // D
-    M[3][1] = 0.5f; // G
-    M[3][2] = 0.5f; // I
+    M[3][0] = 1.0f; // D
+    M[3][1] = 0.0f; // G
+    M[3][2] = 0.0f; // I
     //M[3][3] = 0.0f;
-    M[0][3] = 0.5f; // D
-    M[1][3] = 0.5f; // G
-    M[2][3] = 0.5f; // I
+    M[0][3] = 1.0f; // D
+    M[1][3] = 0.0f; // G
+    M[2][3] = 0.0f; // I
 
     Quadric* Q = new Quadric(M);
     Q->SetBoundingBox(Bbox(-1, 1));

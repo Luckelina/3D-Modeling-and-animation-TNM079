@@ -26,7 +26,7 @@ public:
         // (Hint: Function3D::GetMaxValue())
         glm::vec3 maxVelocity = abs(mVectorField->GetMaxValue()); //Vx or Vy or Vz
         float dx = mLS->GetDx();  // Dx=Dy=Dz
-        float reduce = 0.9f;
+        float reduce = 0.5f;
                                                
         return (reduce*dx)/(std::max({maxVelocity.x, maxVelocity.y, maxVelocity.z}));
     }

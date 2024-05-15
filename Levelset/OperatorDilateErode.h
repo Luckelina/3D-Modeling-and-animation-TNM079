@@ -58,7 +58,6 @@ public:
     virtual float Evaluate(size_t i, size_t j, size_t k) {
         // Compute the rate of change (dphi/dt)
         float ddx2, ddy2, ddz2;  // Squares of the partial derivatives in each direction
-        float signF;
 
         // Call Godunov method to calculate the correct gradient squares
         Godunov(i, j, k, mF, ddx2, ddy2, ddz2);

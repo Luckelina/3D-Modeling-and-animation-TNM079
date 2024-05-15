@@ -129,7 +129,7 @@ glm::vec3 LevelSet::GetGradient(float x, float y, float z) const {
     glm::vec3 gradNegative = {DiffXm(x, y, z), DiffYm(x, y, z), DiffZm(x, y, z)};
     glm::vec3 gradPosNeg = {DiffXpm(x, y, z), DiffYpm(x, y, z), DiffZpm(x, y, z)};  
     
-    return gradPosNeg;
+    return gradPositive;
 }
 
 /*!
