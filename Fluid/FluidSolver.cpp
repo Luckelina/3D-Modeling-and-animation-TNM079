@@ -151,16 +151,18 @@ void FluidSolver::ExternalForces(float dt) {
                 // integrator is the explicit Euler.
                 // TODO: Add code here
 
-                if (!IsFluid(i, j, k)) {
-                    continue;
-                }
+                
+            
+                
                 TransformGridToWorld(i, j, k, x, y, z);
-                glm::vec3 force = mExternalForces->GetValue(x, y, z);
-                glm::vec3& v = mVelocityField.GetValue(x, y, z);
+
+                if (IsFluid(i, j, k)) {
+                glm::vec3 force = mExternalForces->GetValue(x, y, z); 
+                glm::vec3& v = mVelocityField.GetValue(i, j, k); 
                 
                 v += dt * force;//Euler integration
                 mVelocityField.SetValue(i, j, k, v);
-
+                }
                 // OBS: DELETE FOLLOWING LINE, IT'S JUST HERE TO SUPPRESS A WARNING FOR UNUSED
                 // VARIABLES
                 //x = 1.f;
@@ -212,41 +214,35 @@ void FluidSolver::EnforceDirichletBoundaryCondition() {
                 // velocity to zero along the given dimension.
                 // TODO: Add code here
 
-                if (!IsFluid(i, j, k)) {
-                    continue;
+                if (IsFluid(i, j, k)) {
+                    
+                    glm::vec3 v = mVelocityField.GetValue(i, j, k);
+
+                    // x
+                    if (!IsFluid(i + 1, j, k) && mVelocityField.GetValue(i, j, k).x > 0.0f) {
+                        //mVelocityField.GetValue(i, j, k)[0] = 0;
+                        v[0] = 0.0f;
+
+                    }else if (!IsFluid(i - 1, j, k) && mVelocityField.GetValue(i, j, k).x < 0.0f) {
+                        v[0] = 0.0f;
+                    }
+
+                    // y
+                    if (!IsFluid(i, j + 1, k) && mVelocityField.GetValue(i, j, k).y > 0.0f) {
+                        v[1] = 0.0f;
+                    } else if (!IsFluid(i, j - 1, k) && mVelocityField.GetValue(i, j, k).y < 0.0f) {
+                        v[1] = 0.0f;
+                    }
+
+                    // z
+                    if (!IsFluid(i, j, k + 1) && mVelocityField.GetValue(i, j, k).z > 0.0f) {
+                        v[2] = 0.0f;
+                    } else if (!IsFluid(i, j, k - 1) && mVelocityField.GetValue(i, j, k).z < 0.0f) {
+                        v[2] = 0.0f;
+                    }
+
+                    mVelocityField.SetValue(i, j, k, v);
                 }
-
-                glm::vec3 v = mVelocityField.GetValue(i, j, k);
-
-                //i
-                if (!IsFluid(i + 1, j, k) && mVelocityField.GetValue(i, j, k).x > 0.0f) {
-                    //mVelocityField.GetValue(i, j, k)[0] = 0;
-                    v[0] = 0.0f;
-
-                }else if (!IsFluid(i - 1, j, k) && mVelocityField.GetValue(i, j, k).x < 0.0f) {
-                    v[0] = 0.0f;
-                }
-
-
-                //j
-                if (!IsFluid(i, j + 1, k) && mVelocityField.GetValue(i, j, k).y > 0.0f) {
-                    v[1] = 0.0f;
-                } else if (!IsFluid(i, j - 1, k) && mVelocityField.GetValue(i, j, k).y < 0.0f) {
-                    v[1] = 0.0f;
-                }
-
-
-
-                //k
-                if (!IsFluid(i, j, k + 1) && mVelocityField.GetValue(i, j, k).z > 0.0f) {
-                    v[2] = 0.0f;
-                } else if (!IsFluid(i, j, k - 1) && mVelocityField.GetValue(i, j, k).z < 0.0f) {
-                    v[2] = 0.0f;
-                }
-
-
-
-                mVelocityField.SetValue(i, j, k, v);
             }
         }
     }
@@ -296,7 +292,7 @@ void FluidSolver::Projection() {
                     glm::vec3 v_jm = mVelocityField.GetValue(i, j - 1, k);
                     glm::vec3 v_kp = mVelocityField.GetValue(i, j, k + 1);
                     glm::vec3 v_km = mVelocityField.GetValue(i, j, k - 1);
-
+                    // central differencing to discretize divergence of velocityfield eq (13)
                     float divergence = (v_ip.x - v_im.x + v_jp.y - v_jm.y + v_kp.z - v_km.z) / (2.0f * mDx);
                     b.at(ind) = divergence;
 
