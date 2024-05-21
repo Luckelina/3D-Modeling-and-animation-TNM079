@@ -186,22 +186,22 @@ void FluidSolver::SelfAdvection(float dt, int steps) {
                 // k) for trilinear interpolation.
                 // TODO: Add code here
 
-                if (IsFluid(i, j, k)) {
-
-                    //float x, y, z;
-                    //TransformGridToWorld(i, j, k, x, y, z);
-                    // Backtrace for each sub-step
-                    //glm::vec3 velocity = velocities.GetValue(i, j, k);
-                    //glm::vec3 pos;
-                    //for (int step = 0; step < steps; ++step) {
-                    //    pos -= velocity * (dt / steps / mDx);  // Scaling by inverse grid spacing to remain in grid coordinates
-                    //
-                    //    velocity = velocities.GetValue(pos.x, pos.y, pos.z);
-                    //}
-                    //
-                    //
-                    //velocities.SetValue(i, j, k, velocity);
-                }
+                //if (IsFluid(i, j, k)) {
+                //
+                //    float x, y, z;
+                //    TransformGridToWorld(i, j, k, x, y, z);
+                //    //Backtrace for each sub-step
+                //    glm::vec3 velocity = velocities.GetValue(i, j, k);
+                //    glm::vec3 pos;
+                //    for (int step = 0; step < steps; ++step) {
+                //        pos -= velocity * (dt / steps / mDx);  // Scaling by inverse grid spacing to remain in grid coordinates
+                //    
+                //        velocity = velocities.GetValue(pos.x, pos.y, pos.z);
+                //    }
+                //    
+                //    
+                //    velocities.SetValue(i, j, k, velocity);
+                //}
 
 
 
@@ -232,25 +232,25 @@ void FluidSolver::EnforceDirichletBoundaryCondition() {
                     glm::vec3 v = mVelocityField.GetValue(i, j, k);
 
                     // x
-                    if (!IsFluid(i + 1, j, k) && mVelocityField.GetValue(i, j, k).x > 0.0f) {
+                    if (IsSolid(i + 1, j, k) && mVelocityField.GetValue(i, j, k).x > 0.0f) {
                         //mVelocityField.GetValue(i, j, k)[0] = 0;
                         v.x = 0.0f;
 
-                    }else if (!IsFluid(i - 1, j, k) && mVelocityField.GetValue(i, j, k).x < 0.0f) {
+                    }else if (IsSolid(i - 1, j, k) && mVelocityField.GetValue(i, j, k).x < 0.0f) {
                         v.x = 0.0f;
                     }
 
                     // y
-                    if (!IsFluid(i, j + 1, k) && mVelocityField.GetValue(i, j, k).y > 0.0f) {
+                    if (IsSolid(i, j + 1, k) && mVelocityField.GetValue(i, j, k).y > 0.0f) {
                         v.y = 0.0f;
-                    } else if (!IsFluid(i, j - 1, k) && mVelocityField.GetValue(i, j, k).y < 0.0f) {
+                    } else if (IsSolid(i, j - 1, k) && mVelocityField.GetValue(i, j, k).y < 0.0f) {
                         v.y = 0.0f;
                     }
 
                     // z
-                    if (!IsFluid(i, j, k + 1) && mVelocityField.GetValue(i, j, k).z > 0.0f) {
+                    if (IsSolid(i, j, k + 1) && mVelocityField.GetValue(i, j, k).z > 0.0f) {
                         v.z = 0.0f;
-                    } else if (!IsFluid(i, j, k - 1) && mVelocityField.GetValue(i, j, k).z < 0.0f) {
+                    } else if (IsSolid(i, j, k - 1) && mVelocityField.GetValue(i, j, k).z < 0.0f) {
                         v.z = 0.0f;
                     }
 
@@ -321,8 +321,8 @@ void FluidSolver::Projection() {
                     // Remember to treat the boundaries of (i,j,k).
                     // TODO: Add code here
 
-                    //eq 22
-                    	  int list[7] = { !IsSolid(i+1,j,k), !IsSolid(i-1,j,k), !IsSolid(i,j+1,k), 0,
+                    //equation (22)
+          int list[7] = { !IsSolid(i+1,j,k), !IsSolid(i-1,j,k), !IsSolid(i,j+1,k), 0,
 		  !IsSolid(i,j-1,k), !IsSolid(i,j,k+1), !IsSolid(i,j,k-1) };
 		  int sum = 0;
 		 
@@ -338,74 +338,6 @@ void FluidSolver::Projection() {
 			sum += list[n];
 		  }
 		  A(ind, ind) = -sum/dx2;
-		  
-
-                    /* float fluidElementValue = 1.0f / dx2;
-                    int numOfSolids = 0;
-                    int numOfFluids = 0;
-
-                    bool ip = IsSolid(i + 1, j, k);
-                    bool im = IsSolid(i - 1, j, k);
-                    bool jp = IsSolid(i, j + 1, k);
-                    bool jm = IsSolid(i, j - 1, k);
-                    bool kp = IsSolid(i, j, k + 1);
-                    bool km = IsSolid(i, j, k - 1);
-                    std::vector<bool> all = {ip, im, jp, jm, kp, km};
-                    for (bool value : all) {
-                        if (!value) {
-                            numOfFluids++;
-                        }
-                    }
-                    
-
-                    // i
-                    if (ip) {  // || i == (mVoxels.GetDimX() - 1)
-                        A(ind, ind_ip) = 0;
-                        numOfSolids++;
-                    } else {
-                        A(ind, ind_ip) = fluidElementValue;
-                    }
-
-                    if (im) {
-                        A(ind, ind_im) = 0;
-                        numOfSolids++;
-                    } else {
-                        A(ind, ind_im) = fluidElementValue;
-                    }
-
-                    // j
-                    if (jp ) {
-                        A(ind, ind_jp) = 0;
-                        numOfSolids++;
-                    } else {
-                        A(ind, ind_jp) = fluidElementValue;
-                    }
-
-                    if (jm) {
-                        A(ind, ind_jm) = 0;
-                        numOfSolids++;
-                    } else {
-                        A(ind, ind_jm) = fluidElementValue;
-                    }
-
-
-                    // k
-                    if (kp ) {
-                        A(ind, ind_kp) = 0;
-                        numOfSolids++;
-                    } else {
-                        A(ind, ind_kp) = fluidElementValue;
-                    }
-
-                    if (jm) {
-                        A(ind, ind_km) = 0;
-                        numOfSolids++;
-                    } else {
-                        A(ind, ind_km) = fluidElementValue;
-                    }
-
-
-                    A(ind, ind) = -numOfFluids / dx2; */
 
 
                 }   
