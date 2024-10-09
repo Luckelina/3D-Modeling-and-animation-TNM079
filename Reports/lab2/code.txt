@@ -1,0 +1,97 @@
+/*!
+ * \param[in] indx face index, points into HalfEdgeMesh::mFaces
+ */
+glm::mat4 QuadricDecimationMesh::createQuadricForFace(size_t indx) const {
+
+    // Calculate the quadric (outer product of plane parameters) for a face
+    // here using the formula from Garland and Heckbert
+
+    HalfEdge e1 = e(f(indx).edge);
+    // Vertex positions of the face
+    glm::vec3 v1 = v(e1.vert).pos;
+   
+    glm::vec3 normal1 = f(indx).normal;
+    float d = -glm::dot(normal1, v1); // ax + by + cz + d. This is the last component d.
+
+    glm::vec4 plane(normal1, d);                           // Extended plane coefficients to 4D. 
+    glm::mat4 quadric = glm::outerProduct(plane, plane);  // Compute quadric.
+
+    return quadric;
+}
+
+
+
+/*!
+ * \param[in] indx vertex index, points into HalfEdgeMesh::mVerts
+ */
+glm::mat4 QuadricDecimationMesh::createQuadricForVert(size_t indx) const {
+    glm::mat4 Q({0.0f, 0.0f, 0.0f, 0.0f}, 
+                {0.0f, 0.0f, 0.0f, 0.0f}, 
+                {0.0f, 0.0f, 0.0f, 0.0f},
+                {0.0f, 0.0f, 0.0f, 0.0f});
+
+    // The quadric for a vertex is the sum of all the quadrics for the adjacent
+    // faces Tip: Matrix4x4 has an operator +=
+
+    for (const auto& faceIndx : FindNeighborFaces(indx)) {
+        Q += createQuadricForFace(faceIndx);
+    }
+
+
+    return Q;
+}
+
+
+
+/*!
+ * \param[in,out] collapse The edge collapse object to (re-)compute,
+ * DecimationMesh::EdgeCollapse
+ */
+void QuadricDecimationMesh::computeCollapse(EdgeCollapse* collapse) {
+    // Compute collapse->position and collapse->cost here
+    // based on the quadrics at the edge endpoints
+
+    HalfEdge e1 = e(collapse->halfEdge);
+    auto v1 = e1.vert;
+    auto v2 = e(e1.pair).vert;
+
+    // Q is the sum of the quadrics at the edge endpoints
+    glm::mat4 Q = mQuadrics[v1] + mQuadrics[v2];
+
+    glm::mat4 Qbar = Q;
+
+
+    // Set the last row to (0, 0, 0, 1) for the minimization problem (this is Q-bar)
+    Qbar[0][3] = 0.0f;
+    Qbar[1][3] = 0.0f;
+    Qbar[2][3] = 0.0f;
+    Qbar[3][3] = 1.0f;
+    glm::vec4 v_bar;
+
+   
+    //Check if invertable det(Q) != 0
+    if (abs(glm::determinant(Qbar)) > 0.0000000001f) {
+    
+        v_bar = glm::inverse(Qbar) * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    
+    } else {
+        
+        glm::vec4 v1Pos(v(v1).pos, 1.0f);
+        glm::vec4 v2Pos(v(v2).pos, 1.0f);
+        glm::vec4 midPos((v1Pos + v2Pos) * 0.5f);
+       
+        std::vector<glm::vec4> candidates{v1Pos, v2Pos, midPos};
+        float minError = std::numeric_limits<float>::max();
+        for (const auto& candidate : candidates) {
+            //glm::vec4 v_candidate = candidate;
+            float error = glm::dot(candidate, Q * candidate);
+            if (error < minError) {
+                minError = error;
+                v_bar = candidate;
+            }
+        }
+    }
+
+    collapse->position = glm::vec3(v_bar.x,v_bar.y,v_bar.z);  // Set the target position for this collapse
+    collapse->cost = glm::dot(v_bar, Q * v_bar);
+}

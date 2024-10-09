@@ -1,0 +1,208 @@
+// Add the external forces
+void FluidSolver::ExternalForces(float dt) {
+    if (mExternalForces == NULL) return;
+
+    float x, y, z;
+    for (size_t i = 0; i < mVoxels.GetDimX(); i++) {
+        for (size_t j = 0; j < mVoxels.GetDimY(); j++) {
+            for (size_t k = 0; k < mVoxels.GetDimZ(); k++) {
+
+                // If we're in fluid (see FluidSolver::IsFluid()), sample the external
+                // force field (using world coordinates, see
+                // FluidSolver::TransformGridToWorld()) and perform the integration to
+                // update the velocity field (mVelocityField). The simplest possible
+                // integrator is the explicit Euler.
+                // TODO: Add code here
+
+                
+
+                if (IsFluid(i, j, k)) {
+                    TransformGridToWorld(i, j, k, x, y, z);
+                    glm::vec3 force = mExternalForces->GetValue(x, y, z); 
+                    glm::vec3 v = mVelocityField.GetValue(i, j, k); 
+                    
+                    v += dt * force;//Euler integration
+                    mVelocityField.SetValue(i, j, k, v);
+                }
+            }
+        }
+    }
+}
+
+// Enforce the Dirichlet boundary conditions
+void FluidSolver::EnforceDirichletBoundaryCondition() {
+    for (size_t i = 0; i < mVoxels.GetDimX(); i++) {
+        for (size_t j = 0; j < mVoxels.GetDimY(); j++) {
+            for (size_t k = 0; k < mVoxels.GetDimZ(); k++) {
+
+                // If we're in fluid, check the neighbors of (i,j,k) to
+                // see if it's next to a solid boundary. If so, project
+                // the velocity to the boundary plane by setting the
+                // velocity to zero along the given dimension.
+                // TODO: Add code here
+
+                if (IsFluid(i, j, k)) {
+                    
+                    glm::vec3 v = mVelocityField.GetValue(i, j, k);
+
+                    // x
+                    if (IsSolid(i + 1, j, k) && mVelocityField.GetValue(i, j, k).x > 0.0f) {
+                        //mVelocityField.GetValue(i, j, k)[0] = 0;
+                        v.x = 0.0f;
+
+                    }else if (IsSolid(i - 1, j, k) && mVelocityField.GetValue(i, j, k).x < 0.0f) {
+                        v.x = 0.0f;
+                    }
+
+                    // y
+                    if (IsSolid(i, j + 1, k) && mVelocityField.GetValue(i, j, k).y > 0.0f) {
+                        v.y = 0.0f;
+                    } else if (IsSolid(i, j - 1, k) && mVelocityField.GetValue(i, j, k).y < 0.0f) {
+                        v.y = 0.0f;
+                    }
+
+                    // z
+                    if (IsSolid(i, j, k + 1) && mVelocityField.GetValue(i, j, k).z > 0.0f) {
+                        v.z = 0.0f;
+                    } else if (IsSolid(i, j, k - 1) && mVelocityField.GetValue(i, j, k).z < 0.0f) {
+                        v.z = 0.0f;
+                    }
+
+                    mVelocityField.SetValue(i, j, k, v);
+                }
+            }
+        }
+    }
+}
+
+
+// Project the velocity field to preserve the volume
+void FluidSolver::Projection() {
+
+    // Compute number of elements in the grid
+    auto elements = mVoxels.GetDimX() * mVoxels.GetDimY() * mVoxels.GetDimZ();
+
+    // Create sparse matrix and guess that we have 7 non-zero elements
+    // per grid point
+    CoordMatrix<float, size_t> A(elements, elements);
+    A.reserve(elements * 7);
+    A.beginPush();
+
+    // Create vectors x, b in the linear system of equations Ax=b
+    std::vector<float> x(elements, 0), b(elements, 0);
+
+    float dx2 = mDx * mDx;
+
+    std::cerr << "Building A matrix and b vector..." << std::endl;
+    for (size_t i = 0; i < mVoxels.GetDimX(); i++) {
+        for (size_t j = 0; j < mVoxels.GetDimY(); j++) {
+            for (size_t k = 0; k < mVoxels.GetDimZ(); k++) {
+
+                // If we're in fluid...
+                if (IsFluid(i, j, k)) {
+
+                    // Compute the linear indices of (i,j,k) and its neighbors
+                    // (you need these to index into the A matrix and x,b vectors)
+                    size_t ind = mVoxels.ComputeLinearIndex(i, j, k);
+                    size_t ind_ip = mVoxels.ComputeLinearIndex(i + 1, j, k);
+                    size_t ind_im = mVoxels.ComputeLinearIndex(i - 1, j, k);
+                    size_t ind_jp = mVoxels.ComputeLinearIndex(i, j + 1, k);
+                    size_t ind_jm = mVoxels.ComputeLinearIndex(i, j - 1, k);
+                    size_t ind_kp = mVoxels.ComputeLinearIndex(i, j, k + 1);
+                    size_t ind_km = mVoxels.ComputeLinearIndex(i, j, k - 1);
+
+                    // Compute entry for b vector (divergence of the velocity field:
+                    // \nabla \dot w_i,j,k)
+                    // TODO: Add code here
+                    glm::vec3 v_ip = mVelocityField.GetValue(i + 1, j, k);
+                    glm::vec3 v_im = mVelocityField.GetValue(i - 1, j, k);
+                    glm::vec3 v_jp = mVelocityField.GetValue(i, j + 1, k);
+                    glm::vec3 v_jm = mVelocityField.GetValue(i, j - 1, k);
+                    glm::vec3 v_kp = mVelocityField.GetValue(i, j, k + 1);
+                    glm::vec3 v_km = mVelocityField.GetValue(i, j, k - 1);
+                    // central differencing to discretize divergence of velocityfield eq (13)
+                    float divergence = ((v_ip[0] - v_im[0]) + (v_jp[1] - v_jm[1]) + (v_kp[2] - v_km[2])) / (2.0f * mDx);
+                    b.at(ind) = divergence;
+
+                    // Compute entries for A matrix (discrete Laplacian operator).
+                    // The A matrix is a sparse matrix but can be used like a regular
+                    // matrix. That is, you access the elements by A(row, column).
+                    // However, due to the matrix data structure you cannot read
+                    // elements at this point (until you do A.endPush(), see below).
+                    // So, only use A(row, column) = ... to set a value in the matrix,
+                    // don't use A(row, column) to get a value.
+                    // Remember to enforce the boundary conditions if we're next to
+                    // a solid (allow no change of flow in that direction).
+                    // Remember to treat the boundaries of (i,j,k).
+                    // TODO: Add code here
+
+                    //equation (22)
+          int list[7] = { !IsSolid(i+1,j,k), !IsSolid(i-1,j,k), !IsSolid(i,j+1,k), 0,
+		  !IsSolid(i,j-1,k), !IsSolid(i,j,k+1), !IsSolid(i,j,k-1) };
+		  int sum = 0;
+		 
+		  A(ind, ind_ip) = list[0]/dx2;
+		  A(ind, ind_im) = list[1]/dx2;
+		  A(ind, ind_jp) = list[2]/dx2;
+
+		  A(ind, ind_jm) = list[4]/dx2;
+		  A(ind, ind_kp) = list[5]/dx2;
+		  A(ind, ind_km) = list[6]/dx2;
+
+		  for (int n = 0; n < 7; ++n) {
+			sum += list[n];
+		  }
+		  A(ind, ind) = -sum/dx2;
+
+
+                }   
+            }       
+        }
+    }
+
+    // Rebuild the sparse matrix structure
+    A.endPush();
+
+    // Solve Ax=b using conjugate gradient
+    std::cerr << "Conjugate gradient solver... ";
+    ConjugateGradient<CoordMatrix<float, size_t>, std::vector<float>, float> CG(100, 1e-3f);
+    CG.solve(A, x, b);
+    std::cerr << "finished with tolerance " << CG.getTolerance() << " in " << CG.getNumIter()
+              << " iterations" << std::endl;
+
+    // Subtract the gradient of x to preserve the volume
+    for (size_t i = 0; i < mVoxels.GetDimX(); i++) {
+        for (size_t j = 0; j < mVoxels.GetDimY(); j++) {
+            for (size_t k = 0; k < mVoxels.GetDimZ(); k++) {
+
+                // If we're in fluid...
+                if (IsFluid(i, j, k)) {
+
+                    // Compute the linear indices of (i,j,k) and its neighbors
+                    size_t ind_ip = mVoxels.ComputeLinearIndex(i + 1, j, k);
+                    size_t ind_im = mVoxels.ComputeLinearIndex(i - 1, j, k);
+                    size_t ind_jp = mVoxels.ComputeLinearIndex(i, j + 1, k);
+                    size_t ind_jm = mVoxels.ComputeLinearIndex(i, j - 1, k);
+                    size_t ind_kp = mVoxels.ComputeLinearIndex(i, j, k + 1);
+                    size_t ind_km = mVoxels.ComputeLinearIndex(i, j, k - 1);
+
+                    // Compute the gradient of x at (i,j,k) using central differencing
+                    // and subtract this gradient from the velocity field.
+                    // Thereby removing divergence - preserving volume.
+                    // TODO: Add code here
+
+		            float dx = (x.at(ind_ip) - x.at(ind_im)) / (2.0f * mDx);
+                    float dy = (x.at(ind_jp) - x.at(ind_jm)) / (2.0f * mDx);
+                    float dz = (x.at(ind_kp) - x.at(ind_km)) / (2.0f * mDx);
+
+                    glm::vec3 x_gradient = {dx, dy, dz};
+                    glm::vec3 new_value = (mVelocityField.GetValue(i, j, k) - x_gradient);
+
+                    mVelocityField.SetValue(i, j, k, new_value); 
+
+
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,120 @@
+void FrameMain::AddObjectQuadricPlane(wxCommandEvent& event) {
+    glm::mat4 M{0.0f};
+    //Lab part: Construct the quadric matrix here
+
+    M[3][0] = 0.5f; // D
+    M[3][1] = 0.5f; // G
+    M[3][2] = 0.5f; // I
+    //M[3][3] = 0.0f;
+    M[0][3] = 0.5f; // D
+    M[1][3] = 0.5f; // G
+    M[2][3] = 0.5f; // I
+
+
+    Quadric* Q = new Quadric(M);
+    Q->SetBoundingBox(Bbox(-1, 1));
+    Q->SetMeshSampling(GetMeshSampling());
+    Q->SetDifferentialScale(GetDifferentialScale());
+    Q->Triangulate<SimpleMesh>();
+    Q->SetName("Plane");
+    AddUniqueObject(Q);
+    mGLViewer->Render();
+}
+
+void FrameMain::AddObjectQuadricCylinder(wxCommandEvent& event) {
+    glm::mat4 M{0.0f};
+    // Lab part: Construct the quadric matrix here
+
+    M[0][0] = 1.0f; // A    
+    M[1][1] = 1.0f; // E
+    M[3][3] = -1.0f; // J
+
+
+    
+    Quadric* Q = new Quadric(M);
+    Q->SetBoundingBox(Bbox(-1, 1));
+    Q->SetMeshSampling(GetMeshSampling());
+    Q->SetDifferentialScale(GetDifferentialScale());
+    Q->Triangulate<SimpleMesh>();
+    Q->SetName("Cylinder");
+    AddUniqueObject(Q);
+    mGLViewer->Render();
+}
+
+void FrameMain::AddObjectQuadricEllipsoid(wxCommandEvent& event) {
+    glm::mat4 M{0.0f};
+    // Lab part: Construct the quadric matrix here
+
+    M[0][0] = 1.0f;
+    M[1][1] = 1.0f;
+    M[2][2] = 1.0f;
+    M[3][3] = -1.0f;
+
+    Quadric* Q = new Quadric(M);
+    Q->SetBoundingBox(Bbox(-1, 1));
+    Q->SetMeshSampling(GetMeshSampling());
+    Q->SetDifferentialScale(GetDifferentialScale());
+    Q->Triangulate<SimpleMesh>();
+    Q->SetName("Ellipsoid");
+    AddUniqueObject(Q);
+    mGLViewer->Render();
+}
+
+void FrameMain::AddObjectQuadricCone(wxCommandEvent& event) {
+    glm::mat4 M{0.0f};
+    // Lab part: Construct the quadric matrix here
+
+    M[0][0] = 1.0f;
+    M[1][1] = 1.0f;
+    M[2][2] = -1.0f;
+    
+
+    Quadric* Q = new Quadric(M);
+    Q->SetBoundingBox(Bbox(-1, 1));
+    Q->SetMeshSampling(GetMeshSampling());
+    Q->SetDifferentialScale(GetDifferentialScale());
+    Q->Triangulate<SimpleMesh>();
+    Q->SetName("Cone");
+    AddUniqueObject(Q);
+    mGLViewer->Render();
+}
+
+void FrameMain::AddObjectQuadricParaboloid(wxCommandEvent& event) {
+    glm::mat4 M{0.0f};
+    // Lab part: Construct the quadric matrix here
+
+
+    M[0][0] = 1.0f;
+    M[1][1] = 1.0f;
+    M[3][2] = -1.0f;
+
+
+    Quadric* Q = new Quadric(M);
+    Q->SetBoundingBox(Bbox(-2, 2));
+    Q->SetMeshSampling(GetMeshSampling());
+    Q->SetDifferentialScale(GetDifferentialScale());
+    Q->Triangulate<SimpleMesh>();
+    Q->SetName("Paraboloid");
+    AddUniqueObject(Q);
+    mGLViewer->Render();
+}
+
+void FrameMain::AddObjectQuadricHyperboloid(wxCommandEvent& event) {
+    glm::mat4 M{0.0f};
+    // Lab part: Construct the quadric matrix here
+
+    M[0][0] = 1.0f;
+    M[1][1] = 1.0f;
+    M[2][2] = -1.0f;
+    M[3][3] = 1.0f;
+
+
+    Quadric* Q = new Quadric(M);
+    Q->SetBoundingBox(Bbox(-2, 2));
+    Q->SetMeshSampling(GetMeshSampling());
+    Q->SetDifferentialScale(GetDifferentialScale());
+    Q->Triangulate<SimpleMesh>();
+    Q->SetName("Hyperboloid");
+    AddUniqueObject(Q);
+    mGLViewer->Render();
+}
